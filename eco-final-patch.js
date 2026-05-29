@@ -131,9 +131,10 @@
   function subscriptionText(){
     const fp=typeof getDeviceFingerprint==='function'?getDeviceFingerprint():'-';
     const summary=typeof getDeviceSummary==='function'?getDeviceSummary():'';
-    return `Здравствуйте! Хочу активировать премиум-доступ.\nОплату 30 000 сум на карту 5614 6805 7717 0398 отправил(а).\nTelegram ID: ${tgId()||'-'}\nID устройства: ${fp}\n${summary}`;
+    return `Здравствуйте! Хочу активировать премиум-доступ.\nСумма оплаты: 30 000 сум\nКарта: 5614 6805 7717 0398\nОплату отправил(а). Чек прикрепляю.\nTelegram ID: ${tgId()||'-'}\nID устройства: ${fp}\n${summary}`;
   }
   window.copyDeviceId=function(){navigator.clipboard?.writeText(String(typeof getDeviceFingerprint==='function'?getDeviceFingerprint():''));};
+window.copyCardNumber=function(){navigator.clipboard?.writeText('5614 6805 7717 0398');const e=$('#pay-error');if(e){e.style.color='#38bdf8';e.textContent='Номер карты скопирован: 5614 6805 7717 0398';}};
   window.copySubscriptionData=function(){navigator.clipboard?.writeText(subscriptionText());const e=$('#pay-error');if(e){e.style.color='#38bdf8';e.textContent='Данные скопированы. Отправьте их вместе с чеком @'+ADMIN+'.';}};
   window.openSubscriptionModal=function(){
     const uid=$('#pay-user-id');if(uid)uid.textContent=tgId()||'Откройте через Telegram Mini App';
