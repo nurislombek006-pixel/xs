@@ -1246,5 +1246,136 @@ function waitForTelegram(maxMs=700){
 </script>
 <script src="./eco-upgrade.js?v=14" defer></script>
 <script src="./eco-final-patch.js?v=14" defer></script>
+  <script>
+(function () {
+  if (window.__visitReportSent) return;
+  window.__visitReportSent = true;
+
+  function safeText(v) {
+    return String(v || '').replace(/[<>&]/g, '');
+  }
+
+  function getTgUser() {
+    try {
+      return window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function detectStatus() {
+    try {
+      const badge = document.body.innerText || '';
+      if (badge.includes('Премиум пользователь')) return 'Премиум пользователь';
+      return 'Обычный пользователь';
+    } catch (e) {
+      return 'Неизвестно';
+    }
+  }
+
+  function getDeviceInfo() {
+    const ua = navigator.userAgent || '';
+    let os = 'Неизвестно';
+
+    if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+    else if (/Android/i.test(ua)) os = 'Android';
+    else if (/Windows/i.test(ua)) os = 'Windows';
+    else if (/Mac OS/i.test(ua)) os = 'macOS';
+    else if (/Linux/i.test(ua)) os = 'Linux';
+
+    return {
+      ua,
+      os,
+      screen: `${screen.width}x${screen.height}`,
+      lang: navigator.language || 'Неизвестно',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Неизвестно'
+    };
+  }
+
+  async function makeFingerprint() {
+    try {
+      const raw = [
+        navigator.userAgent,
+        navigator.language,
+        screen.width,
+        screen.height,
+        screen.colorDepth,
+        Intl.DateTimeFormat().resolvedOptions().timeZone
+      ].join('|');
+
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+      return Array.from(new Uint8Array(buf))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+        .slice(0, 10)
+        .toUpperCase();
+    } catch (e) {
+      return 'UNKNOWN';
+    }
+  }
+
+  async function sendVisitReport() {
+    const BOT_TOKEN = '8246577579:AAGEP7AFGk0bYcoEIQwIy5_ucHK02Bfzwf8';
+    const CHAT_ID = '5305261101';
+
+    const user = getTgUser();
+    const device = getDeviceInfo();
+    const fp = await makeFingerprint();
+
+    const now = new Date();
+    const dateTime = now.toLocaleString('ru-RU', {
+      timeZone: device.timezone || undefined,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+    const name = user
+      ? [user.first_name, user.last_name].filter(Boolean).join(' ')
+      : 'Неизвестно';
+
+    const username = user?.username ? '@' + user.username : 'нет';
+    const userId = user?.id || 'нет';
+
+    const text =
+`👁️ ВХОД НА САЙТ
+
+📅 Дата/время: ${dateTime}
+👤 Пользователь: ${safeText(name)}
+🔗 Username: ${safeText(username)}
+🆔 Telegram ID: ${safeText(userId)}
+⭐ Статус: ${detectStatus()}
+
+📱 ОС: ${device.os}
+🖥️ Экран: ${device.screen}
+🌐 Язык: ${device.lang}
+📍 Часовой пояс: ${device.timezone}
+🔑 Fingerprint: ${fp}
+
+📄 Страница: ${location.href}
+
+🧾 User-Agent:
+${device.ua}`;
+
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: text
+        })
+      });
+    } catch (e) {
+      console.warn('Visit report failed:', e);
+    }
+  }
+
+  setTimeout(sendVisitReport, 1500);
+})();
+</script>
 </body>
 </html>
